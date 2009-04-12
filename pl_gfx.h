@@ -34,6 +34,11 @@ int   pl_gfx_init();
 void  pl_gfx_shutdown();
 
 void* pl_gfx_vram_alloc(unsigned int bytes);
+void  pl_gfx_put_image(const PspImage *image, 
+                      int dx,
+                      int dy,
+                      int dw,
+                      int dh);
 
 #ifdef __cplusplus
 }

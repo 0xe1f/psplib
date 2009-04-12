@@ -25,13 +25,23 @@
 #include <pspgu.h>
 #include <math.h>
 
+#include "image.h"
+
 #include "pl_gfx.h"
-#include "pl_image.h"
 
 #define SLICE_SIZE    16
 #define BUF_WIDTH     512
 #define VRAM_START    0x04000000
 #define VRAM_UNCACHED 0x40000000
+
+static unsigned int get_bytes_per_pixel(unsigned int format);
+
+typedef struct pl_gfx_xf_fvertex_t
+{
+  short u, v;
+  u16 color;
+  float x, y, z;
+} pl_gfx_xf_fvertex;
 
 typedef struct pl_gfx_vertex_t
 {
@@ -39,9 +49,6 @@ typedef struct pl_gfx_vertex_t
   unsigned short color;
   short x, y, z;
 } pl_gfx_vertex;
-
-static unsigned int get_bytes_per_pixel(unsigned int format);
-static unsigned int get_texture_format(pl_image_format format);
 
 static void *_vram_alloc_ptr = NULL;
 static void *_disp_buffer    = NULL;
@@ -63,21 +70,6 @@ static unsigned int get_bytes_per_pixel(unsigned int format)
     return 4;
   case GU_PSM_T8:
     return 1;
-  default:
-    return 0;
-  }
-}
-
-static unsigned int get_texture_format(pl_image_format format)
-{
-  switch (format)
-  {
-  case pl_image_indexed:
-    return GU_PSM_T8;
-  case pl_image_5551:
-    return GU_PSM_5551;
-  case pl_image_4444:
-    return GU_PSM_4444;
   default:
     return 0;
   }
@@ -161,62 +153,69 @@ void* pl_gfx_vram_alloc(unsigned int bytes)
   return ptr;
 }
 
-void pl_video_put_image(const pl_image *image, 
-                        int dx,
-                        int dy,
-                        int dw,
-                        int dh)
+void pl_gfx_put_image(const PspImage *image, 
+                      int dx,
+                      int dy,
+                      int dw,
+                      int dh)
 {
+  int scissor_enabled = sceGuGetStatus(GU_SCISSOR_TEST);
+  if (scissor_enabled)
+    sceGuDisable(GU_SCISSOR_TEST);
+
   sceKernelDcacheWritebackAll();
   sceGuEnable(GU_TEXTURE_2D);
 
-  /* TODO: Rewrite so that any format is rendered */
-  if (image->format == pl_image_indexed)
+  if (image->Depth == PSP_IMAGE_INDEXED)
   {
-    sceGuClutMode(get_texture_format(image->palette.format),
-                  0, 0xff, 0);
-    sceGuClutLoad(image->palette.colors >> 3,
-                  image->palette.palette);
+    sceGuClutMode(GU_PSM_5551, 0, 0xff, 0);
+    sceGuClutLoad(image->PalSize >> 3, image->Palette);
   }
 
-  sceGuTexMode(get_texture_format(image->format),
-               0, 0, GU_FALSE);
-  sceGuTexImage(0,
-                image->line_width,
-                image->line_width,
-                image->line_width,
-                image->bitmap);
+  sceGuTexMode(image->TextureFormat, 0, 0, GU_FALSE);
+  sceGuTexImage(0, image->Width, image->Width, image->Width, image->Pixels);
+
   sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
   sceGuTexFilter(GU_LINEAR, GU_LINEAR);
 
-  pl_gfx_vertex *vertices;
-  int start, end, sc_end, slsz_scaled;
-  slsz_scaled = ceil((float)dw * (float)SLICE_SIZE) / (float)image->view.w;
+  float sc_end, slsz_scaled, ddx = (float)dx;
+  short start, end, sxr;
+  float dxr;
+  slsz_scaled = (float)(dw * SLICE_SIZE) / (float)image->Viewport.Width;
 
-  start = image->view.x;
-  end = image->view.x + image->view.w;
-  sc_end = dx + dw;
+  start = image->Viewport.X;
+  end = image->Viewport.X + image->Viewport.Width;
+  sc_end = ddx + (float)dw;
 
-  for (; start < end; start += SLICE_SIZE, dx += slsz_scaled)
+  pl_gfx_xf_fvertex *tx_vert;
+
+  for (; start < end; start += SLICE_SIZE, ddx += slsz_scaled)
   {
-    vertices = (pl_gfx_vertex*)sceGuGetMemory(2 * sizeof(pl_gfx_vertex));
+    tx_vert = (pl_gfx_xf_fvertex*)sceGuGetMemory(2 * sizeof(pl_gfx_xf_fvertex));
 
-    vertices[0].u = start;
-    vertices[0].v = image->view.y;
-    vertices[1].u = start + SLICE_SIZE;
-    vertices[1].v = image->view.h + image->view.y;
+    sxr = start + SLICE_SIZE;
+    dxr = ddx + slsz_scaled;
+    tx_vert[0].u = start;                   /* source X left */
+    tx_vert[1].u = (sxr > end) ? end : sxr ; /* source X right */
+    tx_vert[0].x = ddx;                   /* dest. X left */
+    tx_vert[1].x = (dxr > sc_end) ? sc_end : dxr; /* dest. X right */
 
-    vertices[0].x = dx; vertices[0].y = dy;
-    vertices[1].x = dx + slsz_scaled; vertices[1].y = dy + dh;
+    tx_vert[0].v = image->Viewport.Y;             /* sy top     */
+    tx_vert[1].v = image->Viewport.Y + image->Viewport.Height; /* sy bottom  */
+    tx_vert[0].y = (float)dy;                     /* dy top    */
+    tx_vert[1].y = (float)dy + (float)dh;         /* dy bottom */
 
-    vertices[0].color
-      = vertices[1].color
-      = vertices[0].z 
-      = vertices[1].z = 0;
+    tx_vert[0].color = tx_vert[1].color = 0;  /* not used */
+    tx_vert[0].z = tx_vert[1].z = 0.0;        /* not used */
 
-    sceGuDrawArray(GU_SPRITES,
-      GU_TEXTURE_16BIT|GU_COLOR_5551|GU_VERTEX_16BIT|GU_TRANSFORM_2D,2,0,vertices);
+    sceGuDrawArray(GU_SPRITES, GU_TEXTURE_16BIT | GU_COLOR_5551 | 
+                               GU_VERTEX_32BITF | GU_TRANSFORM_2D,
+                   2, 0, tx_vert);
   }
 
   sceGuDisable(GU_TEXTURE_2D);
+
+  if (scissor_enabled)
+    sceGuEnable(GU_SCISSOR_TEST);
 }
+
