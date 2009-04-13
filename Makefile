@@ -35,7 +35,7 @@ all: libpsplib.a
 
 libpsplib.a: \
   adhoc.o font.o image.o ctrl.o video.o ui.o \
-  pl_ini.o pl_perf.o pl_vk.o pl_util.o pl_image.o \
+  pl_ini.o pl_perf.o pl_vk.o pl_util.o \
   pl_psp.o pl_menu.o pl_file.o pl_snd.o pl_gfx.o \
   pl_rewind.o pl_ctl.o
 

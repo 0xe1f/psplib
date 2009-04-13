@@ -77,8 +77,7 @@ static unsigned int get_bytes_per_pixel(unsigned int format)
 
 int pl_gfx_init(unsigned int format)
 {
-  unsigned int bytes_per_pixel =
-    get_bytes_per_pixel(format);
+  unsigned int bytes_per_pixel = get_bytes_per_pixel(format);
   unsigned int vram_offset = 0;
 
   if (!bytes_per_pixel) return 0;
@@ -90,7 +89,6 @@ int pl_gfx_init(unsigned int format)
   int size = bytes_per_pixel * BUF_WIDTH * PL_GFX_SCREEN_HEIGHT;
   _draw_buffer = (void*)vram_offset;
   vram_offset += size;
-  /* TODO: bpp was originally 4 instead of 2 here */
   _disp_buffer = (void*)vram_offset;
   vram_offset += size;
   _depth_buffer = (void*)vram_offset;
@@ -98,34 +96,21 @@ int pl_gfx_init(unsigned int format)
 
   sceGuInit();
   sceGuStart(GU_DIRECT, _disp_list);
-  sceGuDrawBuffer(format,
-                  _draw_buffer,
-                  BUF_WIDTH);
-  sceGuDispBuffer(PL_GFX_SCREEN_WIDTH,
-                  PL_GFX_SCREEN_HEIGHT,
-                  _disp_buffer,
-                  BUF_WIDTH);
-  sceGuDepthBuffer(_depth_buffer,
-                   BUF_WIDTH);
+  sceGuDrawBuffer(format, _draw_buffer, BUF_WIDTH);
+  sceGuDispBuffer(PL_GFX_SCREEN_WIDTH, PL_GFX_SCREEN_HEIGHT, _disp_buffer, BUF_WIDTH);
+  sceGuDepthBuffer(_depth_buffer, BUF_WIDTH);
   sceGuDisable(GU_TEXTURE_2D);
   sceGuOffset(0, 0);
-  sceGuViewport(PL_GFX_SCREEN_WIDTH/2,
-                PL_GFX_SCREEN_HEIGHT/2,
-                PL_GFX_SCREEN_WIDTH,
-                PL_GFX_SCREEN_HEIGHT);
+  sceGuViewport(PL_GFX_SCREEN_WIDTH/2, PL_GFX_SCREEN_HEIGHT/2,
+                PL_GFX_SCREEN_WIDTH,   PL_GFX_SCREEN_HEIGHT);
   sceGuDepthRange(0xc350, 0x2710);
   sceGuDisable(GU_ALPHA_TEST);
-  sceGuBlendFunc(GU_ADD,
-                 GU_SRC_ALPHA,
-                 GU_ONE_MINUS_SRC_ALPHA,
-                 0, 0);
+  sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
   sceGuEnable(GU_BLEND);
   sceGuDisable(GU_DEPTH_TEST);
   sceGuEnable(GU_CULL_FACE);
   sceGuDisable(GU_LIGHTING);
   sceGuFrontFace(GU_CW);
-/* TODO:  sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT); */
-/*  sceGuEnable(GU_SCISSOR_TEST); */
   sceGuClear(GU_COLOR_BUFFER_BIT|GU_DEPTH_BUFFER_BIT);
   sceGuAmbientColor(0xffffffff);
   sceGuFinish();
@@ -153,18 +138,15 @@ void* pl_gfx_vram_alloc(unsigned int bytes)
   return ptr;
 }
 
-void pl_gfx_put_image(const PspImage *image, 
-                      int dx,
-                      int dy,
-                      int dw,
-                      int dh)
+void pl_gfx_put_image(const PspImage *image, int dx, int dy, int dw, int dh)
 {
   int scissor_enabled = sceGuGetStatus(GU_SCISSOR_TEST);
-  if (scissor_enabled)
-    sceGuDisable(GU_SCISSOR_TEST);
+  int texture_enabled = sceGuGetStatus(GU_TEXTURE_2D);
 
   sceKernelDcacheWritebackAll();
-  sceGuEnable(GU_TEXTURE_2D);
+
+  if (scissor_enabled) sceGuDisable(GU_SCISSOR_TEST);
+  if (!texture_enabled) sceGuEnable(GU_TEXTURE_2D);
 
   if (image->Depth == PSP_IMAGE_INDEXED)
   {
@@ -213,9 +195,31 @@ void pl_gfx_put_image(const PspImage *image,
                    2, 0, tx_vert);
   }
 
-  sceGuDisable(GU_TEXTURE_2D);
+  /* Restore states */
+  if (!texture_enabled) sceGuDisable(GU_TEXTURE_2D);
+  if (scissor_enabled) sceGuEnable(GU_SCISSOR_TEST);
 
   if (scissor_enabled)
     sceGuEnable(GU_SCISSOR_TEST);
 }
 
+void pl_gfx_begin()
+{
+  sceGuStart(GU_DIRECT, _disp_list);
+}
+
+void pl_gfx_end()
+{
+  sceGuFinish();
+  sceGuSync(0, 0);
+}
+
+void pl_gfx_vsync()
+{
+  sceDisplayWaitVblankStart();
+}
+
+void pl_gfx_swap()
+{
+  sceGuSwapBuffers();
+}

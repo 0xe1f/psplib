@@ -30,15 +30,16 @@ extern "C" {
 #define PL_GFX_SCREEN_WIDTH  480
 #define PL_GFX_SCREEN_HEIGHT 272
 
-int   pl_gfx_init();
-void  pl_gfx_shutdown();
+int  pl_gfx_init();
+void pl_gfx_shutdown();
+
+void pl_gfx_begin();
+void pl_gfx_end();
+void pl_gfx_vsync();
+void pl_gfx_swap();
 
 void* pl_gfx_vram_alloc(unsigned int bytes);
-void  pl_gfx_put_image(const PspImage *image, 
-                      int dx,
-                      int dy,
-                      int dw,
-                      int dh);
+void  pl_gfx_put_image(const PspImage *image, int dx, int dy, int dw, int dh);
 
 #ifdef __cplusplus
 }
