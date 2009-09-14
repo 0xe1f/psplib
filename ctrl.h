@@ -38,6 +38,10 @@ extern "C" {
 #define PSP_CTRL_NORMAL     0
 #define PSP_CTRL_AUTOREPEAT 1
 
+typedef u64 pl_button;
+typedef u64 pl_button_mask;
+
+#define PL_CTRL_BUTTON_MASK
 void pspCtrlInit();
 int  pspCtrlGetPollingMode();
 void pspCtrlSetPollingMode(int mode);

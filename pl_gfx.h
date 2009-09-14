@@ -30,6 +30,21 @@ extern "C" {
 #define PL_GFX_SCREEN_WIDTH  480
 #define PL_GFX_SCREEN_HEIGHT 272
 
+typedef u32 pl_color;
+#define PL_MAKE_COLOR(r,g,b,a) \
+  (((int)(r)&0xff)|(((int)(g)&0xff)<<8)|\
+  (((int)(b)&0xff)<<16)|(((int)(a)&0xff)<<24))
+
+#define PL_WHITE    (u32)0xffffffff
+#define PL_BLACK    (u32)0xff000000
+#define PL_GRAY     (u32)0xffcccccc
+#define PL_DARKGRAY (u32)0xff777777
+#define PL_RED      (u32)0xff0000ff
+#define PL_GREEN    (u32)0xff00ff00
+#define PL_BLUE     (u32)0xffff0000
+#define PL_YELLOW   (u32)0xff00ffff
+#define PL_MAGENTA  (u32)0xffff00ff
+
 int  pl_gfx_init();
 void pl_gfx_shutdown();
 
