@@ -1,26 +1,16 @@
-/* psplib/video.c: Graphics rendering routines (legacy version)
-   Copyright (C) 2007-2009 Akop Karapetyan
-
-   $Id$
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-   Author contact information: 
-     Email: dev@psp.akop.org
-*/
-
-/* TODO: move ScratchBuffer into VRAM */
+// Copyright 2007-2015 Akop Karapetyan
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <pspgu.h>
 #include <pspkernel.h>
@@ -67,8 +57,6 @@ static unsigned int  VBlankFreq;
 static void *VramOffset;
 static void *VramChunkOffset;
 static unsigned short __attribute__((aligned(16))) ScratchBuffer[BUF_WIDTH * SCR_HEIGHT];
-//static void *ScratchBuffer;
-//static int ScratchBufferSize;
 static unsigned int __attribute__((aligned(16))) List[262144]; /* TODO: ? */
 
 static void* GetBuffer(const PspImage *image);
@@ -81,8 +69,6 @@ void pspVideoInit()
   VramOffset = 0;
   FrameIndex = 0;
   VramChunkOffset = (void*)0x44088000;
-//  ScratchBufferSize = sizeof(unsigned short) * BUF_WIDTH * SCR_HEIGHT;
-//  ScratchBuffer = pspVideoAllocateVramChunk(ScratchBufferSize); //;memalign(16, ScratchBufferSize);
 
   int size;
   unsigned int vram_buffer_offset = 0;
