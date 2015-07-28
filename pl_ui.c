@@ -68,6 +68,7 @@ static const pl_ui_menu_metrics default_menu_metrics =
 
 int  pl_ui_create(pl_ui *ui)
 {
+  return 1;
 }
 
 void pl_ui_destroy(pl_ui *ui)

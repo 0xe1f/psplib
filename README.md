@@ -57,5 +57,6 @@ library to [PSP Vita](https://github.com/frangarcj/psplib4vita).
 
 License
 -------
-psplib is licensed under the
+psplib is written by Akop Karapetyan.
+Licensed under the
 [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
