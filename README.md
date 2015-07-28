@@ -20,8 +20,6 @@ Dependencies
 In addition to the standard C libraries, programs using psplib should be linked
 against the following PSP libraries: 
 
-psplib depends on the following PSP libraries:
-
 ```
 pspgu pspaudio psprtc psppower pspwlan pspnet_adhoc
 pspnet_adhocctl pspnet_adhocmatching
