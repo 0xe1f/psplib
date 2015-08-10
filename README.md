@@ -4,15 +4,20 @@ psplib
 **psplib** is a lightweight library written to ease porting of existing
 software (mainly emulators) to Sony PSPs capable of running homebrew software.
 
-It includes routines to do native sound and video rendering, as well as basic
-UI features such as menus, scrolling lists, labels and status bars.
-
+It includes routines to do native sound and video rendering, a virtual keyboard
+library, as well as basic UI features such as animated menus, scrolling lists,
+labels and status bars.
 
 This repository is a re-release of the library under a more permissive license.
 The original was licensed under GPL, which is likely to be problematic given
 the spectrum of licenses that accompany existing software. Except for the
 license, this is the same version as the one that can be found in the
 [original SVN repository](http://svn.akop.org/psp/trunk/libpsp).
+
+Sample screenshots from [fMSX PSP](http://psp.akop.org/fmsx):
+
+![Image gallery](http://megagames.com/sites/default/files/game-content-images/fmsxpsp_2.jpg "Image gallery")
+![Menu with dropdown](http://megagames.com/sites/default/files/game-content-images/fmsxpsp_3.jpg "Menu with dropdown")
 
 Dependencies
 ------------
